@@ -1,0 +1,102 @@
+package com.moviestreamingapp.server.exception;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.http.HttpRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+
+import java.time.Instant;
+import java.util.Map;
+
+@ControllerAdvice
+public class GlobalHandlerException {
+    private static final Logger logger = LoggerFactory.getLogger(GlobalHandlerException.class);
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Map<String,Object>> handlerBadCreditialsException(BadCredentialsException ex) {
+        logger.warn("BadCredentials: ", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(AccountDeactivatedException.class)
+    public ResponseEntity<Map<String,Object>> handlerAccountDeactivatedException(AccountDeactivatedException ex) {
+        logger.warn("AccountDeactivatedException: ", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<Map<String,Object>> handlerEmailNotVerifiedException(EmailNotVerifiedException ex) {
+        logger.warn("EmailNotVerifiedException: ", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+    @ExceptionHandler(EmailSendingException.class)
+    public ResponseEntity<Map<String,Object>> handlerEmailSendingException(EmailSendingException ex) {
+        logger.warn("EmailSendingException: ", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<Map<String,Object>> handlerInvalidCredentialsException(InvalidCredentialsException ex) {
+        logger.warn("InvalidCredentialsException: ", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String,Object>> handlerResourceNotFoundException(ResourceNotFoundException ex) {
+        logger.warn("ResourceNotFoundException: ", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<Map<String,Object>> handlerInvalidTokenException(InvalidTokenException ex) {
+        logger.warn("InvalidTokenException: ", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+    @ExceptionHandler(InvalidRoleException.class)
+    public ResponseEntity<Map<String,Object>> handlerInvalidRoleException(InvalidRoleException ex) {
+        logger.warn("InvalidRoleException: ", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<Map<String,Object>> handlerEmailAlreadyExistsException(EmailAlreadyExistsException ex) {
+        logger.warn("EmailAlreadyExistsException: ", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String,Object>> handleGeneric(Exception ex) {
+        logger.warn("Exception: {}", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
+    private ResponseEntity<Map<String,Object>> buildResponse(HttpStatus status, String message) {
+        Map<String,Object> body = Map.of("timestamp", Instant.now(), "error", message);
+        return ResponseEntity.status(status).body(body);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String,Object>> handleValidationException(MethodArgumentNotValidException ex) {
+        String message =
+                ex.getBindingResult().getFieldErrors().stream()
+                        .findFirst()
+                        .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                        .orElse("Invalid Request");
+
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        return ResponseEntity.status(status)
+                .body(Map.of("timestamp", Instant.now(), "error", message));
+
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleClientArbort(Exception ex){
+        logger.debug("Client close connection during streaming (expected for video seeking/buffering) : {}", ex.getMessage());
+    }
+
+
+}

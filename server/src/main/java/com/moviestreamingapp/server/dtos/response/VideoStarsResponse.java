@@ -1,0 +1,15 @@
+package com.moviestreamingapp.server.dtos.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class VideoStarsResponse {
+    private long totalVideos;
+    private long publishedVideos;
+    private long totalDuration;
+
+}
